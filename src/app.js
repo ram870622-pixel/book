@@ -1,3 +1,4 @@
+import { mountLibrary, TOPICS } from './library.js';
 import { mountWorkflow, printBook, renderAttribution } from './workflow.js';
 import { createBook, createPage, movePage, validateBook, MAX_MEDIA_BYTES, MAX_IMPORT_BYTES } from './model.js';
 import { loadBooks, saveBook, deleteBook } from './storage.js';
@@ -5,7 +6,17 @@ import { loadBooks, saveBook, deleteBook } from './storage.js';
 const $ = selector => document.querySelector(selector);
 const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let books = [], activeId = null, pageIndex = 0, readerIndex = 0, timer, saveQueue = Promise.resolve(), storageFailed = false, pendingSaves = 0;
+let library = null, readingBook = null;
 const current = () => books.find(b => b.id === activeId);
+function syncRoute() {
+  const studio=location.hash==='#studio';
+  $('#studio-view').hidden=!studio; $('#library-view').hidden=studio;
+  document.querySelectorAll('[data-nav]').forEach(link=>{ const active=(link.dataset.nav==='studio')===studio; if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current'); });
+  if(location.hash==='#bookshelf')requestAnimationFrame(()=>$('#bookshelf').scrollIntoView({behavior:'smooth'}));
+}
+function openStudio(){location.hash='studio';syncRoute();}
+function openReader(book){readingBook=book;readerIndex=0;renderReader();$('#reader').showModal();}
+window.addEventListener('hashchange',syncRoute);
 function markDraft(book = current()) {
   if(!book) return;
   book.status='draft';
@@ -24,9 +35,9 @@ function persist(book = current()) {
 }
 function updateSaveState() { const el = $('#save-state'); if(el) el.textContent = storageFailed ? '● 저장 실패 · 파일로 내보내 주세요' : pendingSaves ? '● 저장 중…' : '● 이 브라우저에 저장됨'; }
 function renderShelf() {
-  $('#book-count').textContent = books.length;
+  $('#book-count').textContent = books.length; library?.render();
   $('#books').innerHTML = books.map(b => `<button class="book-item ${b.id === activeId ? 'selected' : ''}" data-book="${b.id}"><span class="mini-book">✦</span><span><strong>${escape(b.title || '제목 없는 이야기')}</strong><small>${b.pages.length}페이지 · ${b.status==='complete'?'완성':'초안'} · 비공개</small></span></button>`).join('') || '<p class="shelf-empty">첫 번째 이야기를<br>만들어 보세요.</p>';
-  document.querySelectorAll('[data-book]').forEach(el => el.onclick = () => { activeId = el.dataset.book; pageIndex = 0; render(); });
+  document.querySelectorAll('[data-book]').forEach(el => el.onclick = () => { activeId = el.dataset.book; pageIndex = 0; render(); openStudio(); });
 }
 function mediaElement(media, className = '') {
   const el = document.createElement(media.type === 'video' ? 'video' : 'img');
@@ -42,6 +53,12 @@ function render() {
   const page = book.pages[pageIndex];
   $('#editor').innerHTML = `<div class="editor-toolbar"><span id="save-state" class="saved"></span><div><button id="pdf" class="button quiet">PDF 저장</button><button id="export" class="button quiet">↓ 내보내기</button><button id="read" class="button dark">▷ 책 읽기</button></div></div><div class="book-meta"><label class="sr-only" for="title">책 제목</label><input id="title" maxlength="100" placeholder="동화책 제목" value="${escape(book.title)}"><label for="author">글·그림 <input id="author" maxlength="60" placeholder="작은 작가님의 이름" value="${escape(book.author)}"></label></div><div class="page-tabs" aria-label="페이지 선택">${book.pages.map((p,i) => `<button class="page-tab ${i===pageIndex?'active':''}" data-page="${i}" aria-label="${i+1}페이지" ${i===pageIndex?'aria-current="page"':''}>${String(i+1).padStart(2,'0')}</button>`).join('')}<button id="add-page" class="page-tab add" aria-label="페이지 추가">＋</button></div><div class="page-editor"><div id="media-area" class="media-area ${page.media?'has-media':''}"></div><div class="writing"><span class="eyebrow">PAGE ${String(pageIndex+1).padStart(2,'0')}</span><h3>이 장면에는 어떤 이야기가 있나요?</h3><label for="page-text" class="sr-only">페이지 이야기</label><textarea id="page-text" maxlength="3000" placeholder="옛날 옛적, 작은 숲속에…\n\n아이와 함께 이야기를 채워 보세요.">${escape(page.text)}</textarea><span id="char-count" class="char-count">${page.text.length} / 3,000</span></div></div><div class="page-actions"><div><button id="move-left" class="button quiet" ${pageIndex===0?'disabled':''}>← 앞으로</button><button id="move-right" class="button quiet" ${pageIndex===book.pages.length-1?'disabled':''}>뒤로 →</button></div><span>${pageIndex+1} / ${book.pages.length} 페이지</span><button id="delete-page" class="button quiet danger" ${book.pages.length===1?'disabled':''}>페이지 삭제</button></div><div class="editor-bottom"><span>✧ 정답 없는 이야기, 마음껏 상상해요.</span><button id="delete-book" class="text-button">이 책 삭제</button></div><input id="media-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/ogg" hidden>`;
   updateSaveState(); renderMedia(page);
+  const topicLabel=document.createElement('label');topicLabel.className='topic-control';topicLabel.htmlFor='book-topic';topicLabel.append(document.createTextNode('이야기 주제 '));
+  const topicSelect=document.createElement('select');topicSelect.id='book-topic';
+  TOPICS.forEach(topic=>{const option=document.createElement('option');option.textContent=topic;option.value=topic;topicSelect.append(option);});
+  topicSelect.value=book.topic||'상상과 발견';topicLabel.append(topicSelect);$('.book-meta').append(topicLabel);
+  topicSelect.onchange=()=>{book.topic=topicSelect.value;markDraft();persist();};
+  document.querySelectorAll('[data-page]').forEach(tab=>{const p=book.pages[Number(tab.dataset.page)];if(p.media?.type==='image'){const image=mediaElement(p.media);image.alt='';tab.prepend(image);}else{const icon=document.createElement('span');icon.className='page-thumb';icon.textContent=p.media?.type==='video'?'▷':'✧';tab.prepend(icon);}});
   mountWorkflow(book, { persist, render, notify, markDraft, selectPage: index => { pageIndex=index; }, mediaElement });
   renderAttribution($('.writing'), page);
   $('#pdf').onclick=()=>printBook(book,mediaElement,notify);
@@ -58,7 +75,7 @@ function render() {
   };
   $('#media-file').onchange = event => attach(event.target.files[0], book, page);
   $('#export').onclick = exportBook;
-  $('#read').onclick = () => { readerIndex = 0; renderReader(); $('#reader').showModal(); };
+  $('#read').onclick = () => openReader(book);
 }
 function renderMedia(page) {
   const area = $('#media-area'); area.replaceChildren();
@@ -97,15 +114,16 @@ async function attach(file,book,page) {
     if(saved) notify('작품을 페이지에 담았어요.');
   } catch { notify('파일을 읽지 못했어요. 다른 파일을 선택해 주세요.'); }
 }
-async function newBook() { const book=createBook(); books.unshift(book); activeId=book.id; pageIndex=0; render(); await persist(book); $('#title')?.focus(); }
-function exportBook() {
-  const book=current();
+async function newBook() { const book=createBook(); books.unshift(book); activeId=book.id; pageIndex=0; render(); openStudio(); await persist(book); $('#title')?.focus(); }
+function exportBook() { downloadBook(current()); }
+function downloadBook(book) {
+  if(!book)return;
   const blob=new Blob([JSON.stringify({format:'little-storybook',version:1,book})],{type:'application/json'});
   const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=(book.title||'나의 동화책').replace(/[\\/:*?"<>|]/g,'_')+'.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
   notify('그림과 동영상을 포함한 책 파일을 내보냈어요.');
 }
 function renderReader() {
-  const book=current(), page=book.pages[readerIndex];
+  const book=readingBook || current(), page=book.pages[readerIndex];
   $('#reader-title').textContent=book.title || '제목 없는 이야기';
   const content=$('#reader-content'); content.replaceChildren();
   const art=document.createElement('div'); art.className='reader-art'; if(page.media) art.append(mediaElement(page.media)); else { art.textContent='✧'; art.classList.add('no-art'); }
@@ -117,18 +135,36 @@ function renderReader() {
 }
 $('#new-book').onclick=newBook;
 $('#home-create').onclick=newBook;
-$('#home-read').onclick=()=>{ if(!current()) return notify('책을 먼저 만들어 주세요.'); readerIndex=0; renderReader(); $('#reader').showModal(); };
-$('#import').onclick=()=>$('#import-file').click();
+$('#library-create').onclick=newBook;
+$('#banner-create').onclick=newBook;
+$('#studio-import').onclick=()=>$('#import-file').click();
+$('#guide').onclick=()=>$('#guide-dialog').showModal();
+$('#close-guide').onclick=()=>$('#guide-dialog').close();
+$('#close-share').onclick=()=>$('#share-dialog').close();
+$('#share-export').onclick=()=>{downloadBook(books.find(book=>book.id===$('#share-book').value));};
+document.querySelectorAll('[data-share]').forEach(button=>button.onclick=()=>{
+  const select=$('#share-book');select.replaceChildren();
+  if(!books.length){const option=document.createElement('option');option.textContent='아직 만든 책이 없어요';select.append(option);}
+  books.forEach(book=>{const option=document.createElement('option');option.value=book.id;option.textContent=book.title||'제목 없는 이야기';select.append(option);});
+  select.disabled=!books.length;select.value=current()?.id||select.value;$('#share-export').disabled=!books.length;$('#share-dialog').showModal();
+});
+document.querySelectorAll('[data-stage]').forEach(button=>button.onclick=()=>{const target=document.querySelector(button.dataset.stage);target?.scrollIntoView({behavior:'smooth',block:'center'});target?.focus({preventScroll:true});});
+$('#import').onclick=()=>{$('#share-dialog').close();$('#import-file').click();};
 $('#import-file').onchange=async event=>{
   const file=event.target.files[0]; event.target.value=''; if(!file) return;
   if(file.size>MAX_IMPORT_BYTES) return notify('가져올 수 있는 책 파일은 최대 100MB예요.');
-  try { const book=validateBook(JSON.parse(await file.text())); books.unshift(book); activeId=book.id; pageIndex=0; render(); if(await persist(book)) notify('동화책을 가져왔어요.'); }
+  try { const book=validateBook(JSON.parse(await file.text())); books.unshift(book); activeId=book.id; pageIndex=0; render(); openStudio(); if(await persist(book)) notify('동화책을 가져왔어요.'); }
   catch(error) { notify(error instanceof SyntaxError ? '올바른 책 JSON 파일을 선택해 주세요.' : error.message); }
 };
 $('#close-reader').onclick=()=>$('#reader').close();
-$('#reader').addEventListener('close',()=>{ $('#reader-content').querySelectorAll('video').forEach(v=>v.pause()); });
+$('#reader').addEventListener('close',()=>{ $('#reader-content').querySelectorAll('video').forEach(v=>v.pause()); readingBook=null; });
 $('#prev').onclick=()=>{ if(readerIndex>0) {readerIndex--;renderReader();} };
-$('#next').onclick=()=>{ if(readerIndex<current().pages.length-1) {readerIndex++;renderReader();} };
+$('#next').onclick=()=>{ if(readerIndex<(readingBook||current()).pages.length-1) {readerIndex++;renderReader();} };
 $('#reader').addEventListener('keydown',event=>{ if(event.target.tagName==='VIDEO') return; if(event.key==='ArrowLeft') $('#prev').click(); if(event.key==='ArrowRight') $('#next').click(); });
+library=mountLibrary({getBooks:()=>books,onRead:openReader,onCreate:newBook,mediaElement,onEdit:async(book,isSample)=>{
+  if(isSample){const copy=validateBook({format:'little-storybook',version:1,book});copy.status='draft';books.unshift(copy);activeId=copy.id;pageIndex=0;render();openStudio();await persist(copy);}
+  else{activeId=book.id;pageIndex=0;render();openStudio();}
+}});
+syncRoute();
 try { books=(await loadBooks()).sort((a,b)=>b.updatedAt-a.updatedAt); activeId=books[0]?.id; render(); }
 catch { storageFailed=true; render(); notify('브라우저 저장소를 사용할 수 없어요. 작업 후 반드시 책을 내보내 주세요.'); }

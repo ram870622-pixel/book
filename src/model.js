@@ -1,5 +1,5 @@
 export function createBook() {
-  return { id: crypto.randomUUID(), title: '나의 첫 번째 이야기', author: '', status: 'draft', privacy: 'private', teacherNotes: '', childQuote: '', materials: [], pages: [createPage()], updatedAt: Date.now() };
+  return { id: crypto.randomUUID(), title: '나의 첫 번째 이야기', author: '', status: 'draft', topic: '상상과 발견', privacy: 'private', teacherNotes: '', childQuote: '', materials: [], pages: [createPage()], updatedAt: Date.now() };
 }
 export function createPage() {
   return { id: crypto.randomUUID(), text: '', media: null, origin: 'teacher', childQuote: '' };
@@ -60,5 +60,5 @@ export function validateBook(input) {
     if(!m || !['drawing','photo','artwork','video'].includes(m.kind) || typeof m.identifiable !== 'boolean' || typeof m.guardianConsent !== 'boolean' || (m.identifiable && !m.guardianConsent)) throw new Error('원본 자료의 분류·동의 정보가 올바르지 않아요.');
     return {id:crypto.randomUUID(),kind:m.kind,identifiable:m.identifiable,guardianConsent:m.guardianConsent,media:validateMedia(m.media)};
   });
-  return { id: crypto.randomUUID(), title: book.title, author: book.author, status:book.status==='complete'?'complete':'draft', privacy:'private',teacherNotes:book.teacherNotes||'',childQuote:book.childQuote||'',materials,pages, updatedAt: Date.now() };
+  return { id: crypto.randomUUID(), title: book.title, author: book.author, status:book.status==='complete'?'complete':'draft', topic:['자연과 모험','마음과 감정','친구와 가족','상상과 발견'].includes(book.topic)?book.topic:'상상과 발견', privacy:'private',teacherNotes:book.teacherNotes||'',childQuote:book.childQuote||'',materials,pages, updatedAt: Date.now() };
 }

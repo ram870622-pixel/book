@@ -1,31 +1,56 @@
 <!doctype html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f8f5ef">
-    <title>작은 이야기 공방 · 우리 아이 동화책</title>
-    <link rel="stylesheet" href="./src/style.css">
-    <script type="module" src="./src/app.js"></script>
-  </head>
-  <body>
-    <header class="topbar">
-      <a class="brand" href="./" aria-label="작은 이야기 공방 홈"><span class="brand-icon">✦</span><span>작은 이야기 공방<small>LITTLE STORY STUDIO</small></span></a>
-      <span class="top-note">작은 상상이, 한 권의 책으로</span>
-      <button id="import" class="button quiet">책 가져오기 <span>↗</span></button>
-      <input id="import-file" type="file" accept="application/json,.json" hidden>
-    </header>
-    <main>
-      <section class="intro"><div><span class="eyebrow">MADE WITH LITTLE HANDS & BIG IMAGINATIONS</span><h1>우리 아이의 상상을<br>한 권의 <em>동화책</em>으로.</h1><p>아이의 그림과 놀이 기록으로, 선생님과 함께 만들어요.<br>그림과 사진, 짧은 영상을 모아 세상에 하나뿐인 책을 만들어 보세요.</p><div class="home-actions"><button id="home-create" class="button primary">그림책 만들기</button><button id="home-read" class="button quiet">그림책 읽기 →</button><a href="#workspace-title" class="button quiet">내 책장</a></div></div><div class="hero-art" aria-hidden="true"><span class="spark one">✧</span><div class="paper back"></div><div class="paper front"><div class="sun"></div><div class="hill left"></div><div class="hill right"></div><span class="house">⌂</span><span class="art-label">내가 그린 세상</span></div><span class="spark two">✳</span><span class="art-caption">every little story matters</span></div></section>
-      <section class="workspace" aria-labelledby="workspace-title">
-        <div class="section-heading"><div><span class="eyebrow">OUR LITTLE BOOKSHELF</span><h2 id="workspace-title">이야기 책장 <span id="book-count">0</span></h2></div><button id="new-book" class="button primary">＋ 새 동화책 만들기</button></div>
-        <div class="studio-grid"><aside><div class="shelf-title">나의 동화책</div><div id="books"></div><div class="local-note"><span>♡</span><strong>우리 가족만의 작은 공방</strong><p>작품은 이 브라우저에 저장돼요.<br>소중한 책은 파일로 내보내<br>따로 보관해 주세요.</p></div></aside>
-          <section id="editor" class="editor" aria-label="동화책 편집"></section></div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#faf8f1">
+  <meta name="description" content="아이의 그림과 작은 순간으로 만드는 우리만의 동화책. 읽고, 만들고, 함께 나누는 작은 이야기 공방입니다.">
+  <title>작은 이야기 공방 · 상상이 자라는 책장</title>
+  <link rel="stylesheet" href="./src/style.css">
+  <script type="module" src="./src/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="작은 이야기 공방 홈"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span>작은 이야기 공방<small>아이의 오늘이, 한 권의 이야기로</small></span></a>
+    <nav aria-label="주요 메뉴"><a href="#library" data-nav="library">이야기 책장</a><button data-share>함께 나누기</button><a href="#studio" data-nav="studio">창작 공방</a></nav>
+    <button id="guide" class="button outline">이용 가이드 <span aria-hidden="true">↗</span></button>
+  </header>
+  <main>
+    <div id="library-view">
+      <section class="intro">
+        <div class="hero-copy"><span class="eyebrow"><span class="tiny-star">✳</span> EVERY LITTLE STORY MATTERS</span><h1>아이의 <span class="hero-green">상상</span>이<br><span class="hero-coral">이야기</span>가 되는 곳<span class="title-dot">.</span></h1><p>서툰 그림 한 장, 반짝이는 말 한마디.<br>함께 읽고 만들며, 우리 아이의 세상을 넓혀요.</p><div class="hero-caption"><span class="caption-line"></span>작은 작가들의 커다란 세상</div></div>
+        <div class="hero-art" aria-hidden="true"><span class="floating-star star-a">✧</span><span class="floating-star star-b">✳</span><div class="hero-orbit"></div><div class="hero-book"><div class="hero-page hero-page-left"><i class="illustration-sun"></i><i class="illustration-hill hill-one"></i><i class="illustration-hill hill-two"></i><i class="illustration-house"></i><span>작은 숲의 이야기</span></div><div class="hero-page hero-page-right"><span>옛날 옛적,<br>마음속 작은 숲에<br>이야기가 자랐어요.</span><i></i><i></i><i></i><b>✧</b></div></div><span class="hero-sticker">상상은 자유롭게<br>이야기는 우리답게!</span><span class="hero-art-caption">a little book, a whole new world</span></div>
       </section>
-      <section class="steps"><article><span>01</span><div><h3>작은 작품을 모아요</h3><p>그림, 사진, 짧은 영상을 담아 주세요.</p></div></article><article><span>02</span><div><h3>이야기를 더해요</h3><p>아이의 말 한마디로 페이지를 채워요.</p></div></article><article><span>03</span><div><h3>함께 펼쳐 읽어요</h3><p>우리 가족만의 동화책이 완성돼요.</p></div></article></section>
-    </main>
-    <footer><span>✦ 작은 이야기 공방</span><span>아이의 오늘을, 오래도록 간직하는 방법.</span></footer>
-    <div id="status" role="status" aria-live="polite"></div>
-    <dialog id="reader" aria-label="동화책 읽기"><div class="reader-head"><span id="reader-title"></span><button id="close-reader" class="button quiet">닫기 ✕</button></div><div id="reader-content"></div><div class="reader-nav"><button id="prev" class="button quiet">← 이전</button><span id="reader-counter"></span><button id="next" class="button quiet">다음 →</button></div></dialog>
-  </body>
+      <section class="portals" aria-label="무엇을 해볼까요?">
+        <a id="home-read" class="portal portal-blue" href="#bookshelf"><span class="portal-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><small>READ & DISCOVER</small><strong>이야기 책장</strong><span class="portal-description">책 속으로 떠나는 작은 모험</span></span><b aria-hidden="true">↗</b></a>
+        <button data-share class="portal portal-green"><span class="portal-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M20 11a8 8 0 0 1-11 7.4L4 20l1.6-5A8 8 0 1 1 20 11Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 11h.01M12 11h.01M16 11h.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><span><small>KEEP & SHARE</small><strong>함께 나누기</strong><span class="portal-description">소중한 이야기를 오래 간직해요</span></span><b aria-hidden="true">↗</b></button>
+        <button id="home-create" class="portal portal-peach"><span class="portal-icon"><svg viewBox="0 0 24 24" fill="none"><path d="m15 4 5 5M4 20l5-1L21 7a2 2 0 0 0-5-4L4 15v5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><small>IMAGINE & CREATE</small><strong>창작 공방</strong><span class="portal-description">우리 아이가 주인공인 동화책</span></span><b aria-hidden="true">↗</b></button>
+      </section>
+      <section id="bookshelf" class="library-section" aria-labelledby="library-title">
+        <div class="library-container">
+          <div class="library-heading"><div><span class="eyebrow">A SHELF FULL OF WONDER</span><h2 id="library-title">어떤 이야기를 펼쳐볼까요?</h2></div><span class="library-total" id="library-total"></span></div>
+          <div class="search-row"><label class="search-box" for="book-search"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="1.6"/><path d="m15 15 5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><input id="book-search" type="search" placeholder="어떤 이야기가 궁금한가요? 제목, 작가, 이야기로 찾아보세요" autocomplete="off"><kbd aria-hidden="true">⌕</kbd></label></div>
+          <div class="library-controls"><div class="shelf-filters" role="group" aria-label="책 종류"><button data-filter="all" class="filter-chip active" aria-pressed="true">모든 이야기</button><button data-filter="mine" class="filter-chip" aria-pressed="false">내가 만든 책 <span id="mine-count">0</span></button><button data-filter="sample" class="filter-chip" aria-pressed="false">샘플 책</button></div><div class="select-filters"><label for="topic-filter" class="sr-only">주제</label><select id="topic-filter"><option value="all">모든 주제</option><option>자연과 모험</option><option>마음과 감정</option><option>친구와 가족</option><option>상상과 발견</option></select><label for="book-sort" class="sr-only">책 정렬</label><select id="book-sort"><option value="recent">최근 만든 순</option><option value="title">제목 가나다순</option></select></div></div>
+          <div class="shelf-subline"><p><span aria-hidden="true">✦</span> 책등을 누르면 이야기가 펼쳐져요.</p><span id="search-result" role="status" aria-live="polite"></span></div>
+          <div class="bookcase" id="bookcase" aria-label="입체 이야기 책장"></div>
+          <div class="library-bottom"><p><span aria-hidden="true">♧</span> 샘플 책은 가상 이야기예요. 내가 만든 책은 이 브라우저에만 저장돼요.</p><button id="library-create" class="text-button">나만의 이야기 더하기 <span aria-hidden="true">＋</span></button></div>
+          <div class="create-banner"><div class="banner-icon" aria-hidden="true">✺</div><div><span class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</span><h3>다음 책의 작가는, 우리 아이예요.</h3><p>그림 한 장이면 충분해요. 첫 번째 이야기를 함께 시작해 보세요.</p></div><button id="banner-create" class="button primary">그림책 만들기 <span aria-hidden="true">→</span></button></div>
+        </div>
+      </section>
+    </div>
+    <section id="studio-view" class="studio-view" hidden aria-labelledby="workspace-title">
+      <div class="studio-top"><a href="#library" class="back-link">← 이야기 책장으로</a><span class="private-badge">● 나만의 비공개 작업실</span></div>
+      <div class="section-heading"><div><span class="eyebrow">LITTLE HANDS, BIG IDEAS</span><h1 id="workspace-title">창작 공방 <span id="book-count">0</span></h1><p>그림을 모으고, 이야기를 더하고, 한 권의 책으로.</p></div><button id="new-book" class="button primary">＋ 새 동화책 만들기</button></div>
+      <ol class="studio-progress" aria-label="책 만들기 순서"><li><button data-stage="#teacher-notes"><span>01</span> 소재 모으기</button></li><li><button data-stage="#generate"><span>02</span> 이야기 만들기</button></li><li><button data-stage=".page-editor"><span>03</span> 페이지 꾸미기</button></li><li><button data-stage="#read"><span>04</span> 읽기 · 보관하기</button></li></ol>
+      <div class="studio-grid"><aside><div class="shelf-title">내 작업 중인 책</div><div id="books"></div><button id="studio-import" class="button outline">↓ 책 파일 가져오기</button><div class="local-note"><span>♡</span><strong>작은 이야기를 오래도록</strong><p>작품은 이 브라우저에 저장돼요.<br>완성한 책은 파일로 내보내<br>안전하게 보관해 주세요.</p></div></aside><section id="editor" class="editor" aria-label="동화책 편집"></section></div>
+    </section>
+  </main>
+  <footer><a class="footer-brand" href="./">✦ 작은 이야기 공방</a><span>작은 손끝에서 시작되는, 무한한 이야기.</span><small>MADE FOR LITTLE DREAMERS</small></footer>
+  <input id="import-file" type="file" accept="application/json,.json" hidden>
+  <div id="status" role="status" aria-live="polite"></div>
+  <dialog id="reader" aria-label="동화책 읽기"><div class="reader-head"><div><span class="eyebrow">A LITTLE STORY FOR YOU</span><h2 id="reader-title"></h2></div><button id="close-reader" class="button outline" aria-label="책 읽기 닫기">닫기 ✕</button></div><div id="reader-content"></div><div class="reader-nav"><button id="prev" class="button quiet">← 이전</button><span id="reader-counter"></span><button id="next" class="button primary">다음 →</button></div></dialog>
+  <dialog id="book-detail" aria-label="책 소개"><button id="close-detail" class="dialog-close" aria-label="책 소개 닫기">✕</button><div id="detail-content"></div></dialog>
+  <dialog id="share-dialog" aria-label="이야기 나누기"><div class="dialog-heading"><span class="eyebrow">KEEP A LITTLE STORY</span><h2>소중한 이야기를, 함께.</h2><p>책 파일에는 그림과 영상, 이야기가 모두 담겨요.<br>가족에게 파일을 보내고 같은 사이트에서 열어보세요.</p></div><label class="share-book-label" for="share-book">보낼 책 선택<select id="share-book"></select></label><div class="share-options"><button id="share-export" class="share-option"><span>↗</span><strong>내 책 파일로 내보내기</strong><small>선택한 책을 편집 가능한 JSON 파일로 보관해요</small></button><button id="import" class="share-option"><span>↙</span><strong>받은 책 가져오기</strong><small>공방에서 내보낸 JSON 책 파일을 열어요</small></button></div><p class="dialog-note">온라인 커뮤니티나 자동 공유 기능은 아직 없어요. 파일을 보낼 때는 포함된 개인정보와 보호자 동의를 확인해 주세요.</p><button id="close-share" class="button outline">닫기</button></dialog>
+  <dialog id="guide-dialog" aria-label="이용 가이드"><span class="eyebrow">WELCOME TO OUR LITTLE STUDIO</span><h2>첫 이야기를 만드는 방법</h2><ol class="guide-steps"><li><strong>그림 한 장에서 시작해요</strong><p>창작 공방에서 새 책을 만들고 그림·사진·짧은 영상을 담아요.</p></li><li><strong>아이의 말과 경험을 모아요</strong><p>교사 메모와 아이의 실제 말을 구분해 적어요.</p></li><li><strong>이야기를 함께 다듬어요</strong><p>모의 AI 초안을 검토하고 페이지별 글과 그림을 수정해요.</p></li><li><strong>읽고, 보관하고, 나눠요</strong><p>책 읽기로 넘겨보고 PDF 또는 JSON 파일로 보관해요.</p></li></ol><p class="dialog-note">현재는 모의 AI 체험 버전이에요. 실제 AI 생성·계정 로그인·온라인 공유는 지원하지 않아요.</p><button id="close-guide" class="button primary">이제 시작해 볼게요</button></dialog>
+</body>
 </html>

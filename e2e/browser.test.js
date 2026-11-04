@@ -27,7 +27,7 @@ after(async()=>{await browser?.close();if(server && server.exitCode===null){serv
 async function start(viewport) {
   const context=await browser.newContext({viewport:viewport||{width:1280,height:900},acceptDownloads:true});
   const page=await context.newPage(); const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(url);await page.locator('#first-book').click();
+  await page.goto(url);await page.locator('#home-create').click();
   return {page,context,errors};
 }
 async function waitForText(page,selector,text){await page.waitForFunction(({selector,text})=>document.querySelector(selector)?.textContent.includes(text),{selector,text});}
@@ -125,7 +125,7 @@ test('PDF print layout contains Korean, original images and one page per short s
 test('static project hosting under /book/ loads modules, styles and sample without a root-path dependency',async()=>{
   const context=await browser.newContext();const page=await context.newPage();const errors=[];const failed=[];
   page.on('pageerror',error=>errors.push(error.message));
-  const files=new Set(['/index.html','/src/app.js','/src/model.js','/src/storage.js','/src/workflow.js','/src/style.css','/samples/imagination.svg']);
+  const files=new Set(['/index.html','/src/app.js','/src/library.js','/src/model.js','/src/storage.js','/src/workflow.js','/src/style.css','/samples/imagination.svg']);
   await context.route('**/*',async route=>{
     const request=new URL(route.request().url());
     // Emulate a static project host; requests outside its mount must fail.
@@ -134,11 +134,47 @@ test('static project hosting under /book/ loads modules, styles and sample witho
     if(!files.has(local)){failed.push(request.pathname);await route.fulfill({status:404,body:'missing file'});return;}
     await route.fulfill({path:fileURLToPath(new URL('..'+local,import.meta.url))});
   });
-  await page.goto(url+'/book/');await page.locator('#first-book').click();await page.locator('#sample').click();await waitForText(page,'#originals','(1)');
+  await page.goto(url+'/book/');await page.locator('#home-create').click();await page.locator('#sample').click();await waitForText(page,'#originals','(1)');
   await page.locator('#generate').click();await page.getByRole('button',{name:'검토했어요 · 책에 반영'}).click();
   assert.equal(await page.locator('[data-page]').count(),5);
   assert.equal(await page.locator('.media-area img').evaluate(image=>image.naturalWidth>0),true);
   assert.equal(await page.locator('.studio-grid').evaluate(el=>getComputedStyle(el).display),'grid');
   assert.equal(await page.locator('.brand').getAttribute('href'),'./');
   assert.deepEqual(failed,[]);assert.deepEqual(errors,[]);await context.close();
+});
+test('bookshelf search, themes and sample reading work without creating a saved book',async()=>{
+  const context=await browser.newContext();const page=await context.newPage();await page.goto(url);
+  await page.locator('.book-spine').first().waitFor();assert.equal(await page.locator('.book-spine').count(),10);
+  await page.locator('#book-search').fill('달빛');assert.equal(await page.locator('.book-spine').count(),1);
+  await page.locator('.book-spine').click();assert.match(await page.locator('#detail-content').innerText(),/달빛을 모으는 고양이/);
+  await page.locator('#detail-read').click();assert.match(await page.locator('#reader-title').innerText(),/달빛/);
+  await page.locator('#next').click();assert.match(await page.locator('#reader-counter').innerText(),/2 \/ 4/);
+  await page.locator('#close-reader').click();assert.equal(await page.locator('#mine-count').innerText(),'0');
+  await page.locator('#book-search').fill('');await page.locator('#topic-filter').selectOption('마음과 감정');assert.equal(await page.locator('.book-spine').count(),2);
+  await page.locator('#book-sort').selectOption('title');
+  const titles=await page.locator('.book-spine strong').allTextContents();assert.deepEqual(titles,[...titles].sort((a,b)=>a.localeCompare(b,'ko')));
+  await page.locator('[data-filter="mine"]').click();assert.equal(await page.locator('.book-spine').count(),0);assert.match(await page.locator('#bookcase').innerText(),/첫 주인공/);
+  await context.close();
+});
+test('sample copy becomes an editable private book and exports through the sharing screen',async()=>{
+  const context=await browser.newContext({acceptDownloads:true});const page=await context.newPage();await page.goto(url);
+  await page.locator('.book-spine').first().click();await page.locator('#detail-edit').click();await page.locator('#title').waitFor();
+  assert.match(page.url(),/#studio$/);assert.equal(await page.locator('[data-page]').count(),4);
+  assert.equal(await page.locator('#book-topic').inputValue(),'자연과 모험');
+  await page.locator('#title').fill('내가 바꾼 씨앗 이야기');await page.locator('#book-topic').selectOption('친구와 가족');
+  await page.locator('a[data-nav="library"]').click();await page.locator('[data-filter="mine"]').click();
+  assert.equal(await page.locator('.book-spine').count(),1);assert.match(await page.locator('.book-spine').innerText(),/내가 바꾼/);
+  await page.locator('nav [data-share]').click();assert.equal(await page.locator('#share-book option').count(),1);
+  const downloaded=page.waitForEvent('download');await page.locator('#share-export').click();const file=await downloaded;
+  const path=join(temporary,'shared-book.json');await file.saveAs(path);const saved=JSON.parse(await readFile(path,'utf8')).book;
+  assert.equal(saved.title,'내가 바꾼 씨앗 이야기');assert.equal(saved.privacy,'private');assert.equal(saved.topic,'친구와 가족');assert.equal(saved.pages.length,4);
+  await page.locator('#close-share').click();await page.locator('.book-spine').click();await page.locator('#detail-edit').click();assert.equal(await page.locator('#title').inputValue(),saved.title);
+  await context.close();
+});
+test('older stored books remain editable after the new bookshelf is introduced',async()=>{
+  const context=await browser.newContext();const page=await context.newPage();await page.goto(url);await page.locator('.book-spine').first().waitFor();
+  await page.evaluate(()=>new Promise((resolve,reject)=>{const request=indexedDB.open('little-story-studio',1);request.onsuccess=()=>{const db=request.result;const tx=db.transaction('books','readwrite');tx.objectStore('books').put({id:'legacy-book',title:'예전에 만든 책',author:'가상 작가',status:'draft',privacy:'private',updatedAt:123,pages:[{id:'legacy-page',text:'기존 이야기 그대로',media:null}]});tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};}));
+  await page.reload();await page.locator('[data-filter="mine"]').click();await page.locator('.book-spine').click();await page.locator('#detail-edit').click();
+  assert.equal(await page.locator('#page-text').inputValue(),'기존 이야기 그대로');assert.equal(await page.locator('#book-topic').inputValue(),'상상과 발견');
+  await context.close();
 });

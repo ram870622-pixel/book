@@ -10,7 +10,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     const pathname = decodeURIComponent(url.pathname);
     // Serve only the public application files; never expose Git or local files.
-    if (!['/', '/index.html', '/src/app.js', '/src/model.js', '/src/storage.js', '/src/workflow.js', '/src/style.css', '/samples/imagination.svg'].includes(pathname)) {
+    if (!['/', '/index.html', '/src/app.js', '/src/library.js', '/src/model.js', '/src/storage.js', '/src/workflow.js', '/src/style.css', '/samples/imagination.svg'].includes(pathname)) {
       res.writeHead(404).end('Not found'); return;
     }
     const file = path.join(root, pathname === '/' ? 'index.html' : pathname);
