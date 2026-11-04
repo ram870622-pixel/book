@@ -1,0 +1,14 @@
+node_modules/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Private working materials must stay outside the public repository.
+/private-backups/
+/private/
+/exports/
+*.bundle
+*.zip
+*.tar.gz
